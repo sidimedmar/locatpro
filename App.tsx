@@ -12,7 +12,8 @@ import {
   RefreshCw,
   DownloadCloud,
   CheckCircle2,
-  Database
+  Database,
+  AlertTriangle
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { Property } from './types';
@@ -44,7 +45,12 @@ const App: React.FC = () => {
   // Initialize Supabase Client
   const supabase = useMemo(() => {
     if (syncProvider === 'supabase' && supabaseUrl && supabaseKey) {
-      return createClient(supabaseUrl, supabaseKey);
+      try {
+        return createClient(supabaseUrl, supabaseKey);
+      } catch (e) {
+        console.error("Supabase Init Error:", e);
+        return null;
+      }
     }
     return null;
   }, [syncProvider, supabaseUrl, supabaseKey]);
@@ -80,8 +86,11 @@ const App: React.FC = () => {
   };
 
   const handleSyncPush = async () => {
-    if (syncProvider === 'sheets' && !sheetUrl) return setIsSyncModalOpen(true);
-    if (syncProvider === 'supabase' && (!supabaseUrl || !supabaseKey)) return setIsSyncModalOpen(true);
+    const providerUrl = syncProvider === 'sheets' ? sheetUrl : supabaseUrl;
+    if (!providerUrl) {
+      alert('يرجى ضبط إعدادات الربط أولاً');
+      return setIsSyncModalOpen(true);
+    }
 
     setIsSyncing(true);
     try {
@@ -89,31 +98,34 @@ const App: React.FC = () => {
         await fetch(sheetUrl, {
           method: 'POST',
           mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'push', properties })
         });
       } else if (supabase) {
-        // SQL Upsert (Delete all and re-insert for simple sync)
-        await supabase.from('properties').delete().neq('id', '0');
-        if (properties.length > 0) {
-          const { error } = await supabase.from('properties').insert(properties);
-          if (error) throw error;
-        }
+        // SQL Professional Upsert: Maintient l'intégrité sans supprimer toute la table
+        // On utilise l'ID comme clé de conflit
+        const { error } = await supabase
+          .from('properties')
+          .upsert(properties, { onConflict: 'id' });
+        
+        if (error) throw error;
       }
       
       const time = new Date().toLocaleString('ar-MA');
       setLastSync(time);
       localStorage.setItem('last_sync_time', time);
-      alert('✅ تم رفع البيانات بنجاح!');
+      alert('✅ تم مزامنة البيانات مع SQL بنجاح!');
     } catch (error: any) {
-      alert(`❌ فشل الرفع: ${error.message || 'خطأ غير معروف'}`);
+      console.error("Sync Error:", error);
+      alert(`❌ فشل المزامنة: ${error.message || 'خطأ في الاتصال بقاعدة البيانات'}`);
     } finally {
       setIsSyncing(false);
     }
   };
 
   const handleSyncPull = async () => {
-    if (syncProvider === 'sheets' && !sheetUrl) return setIsSyncModalOpen(true);
-    if (syncProvider === 'supabase' && (!supabaseUrl || !supabaseKey)) return setIsSyncModalOpen(true);
+    const providerUrl = syncProvider === 'sheets' ? sheetUrl : supabaseUrl;
+    if (!providerUrl) return setIsSyncModalOpen(true);
 
     setIsPulling(true);
     try {
@@ -122,13 +134,17 @@ const App: React.FC = () => {
         const response = await fetch(`${sheetUrl}?action=pull`);
         data = await response.json();
       } else if (supabase) {
-        const { data: sqlData, error } = await supabase.from('properties').select('*');
+        const { data: sqlData, error } = await supabase
+          .from('properties')
+          .select('*')
+          .order('contractDate', { ascending: false });
+        
         if (error) throw error;
         data = sqlData as Property[];
       }
       
       if (data && Array.isArray(data)) {
-        if (confirm(`تم العثور على ${data.length} سجل. هل تريد تحديث القائمة المحلية؟`)) {
+        if (confirm(`تم جلب ${data.length} سجل من السحاب. هل تريد تحديث القائمة المحلية؟`)) {
           setProperties(data);
           const time = new Date().toLocaleString('ar-MA');
           setLastSync(time);
@@ -136,7 +152,7 @@ const App: React.FC = () => {
         }
       }
     } catch (error: any) {
-      alert(`❌ فشل الجلب: ${error.message}`);
+      alert(`❌ فشل جلب البيانات: ${error.message}`);
     } finally {
       setIsPulling(false);
     }
@@ -189,7 +205,7 @@ const App: React.FC = () => {
           </button>
 
           <div className="pt-4 border-t border-emerald-800 mt-4 space-y-1">
-            <p className="text-[10px] uppercase tracking-widest text-emerald-400 px-4 mb-2">قاعدة البيانات ({syncProvider === 'sheets' ? 'Sheets' : 'SQL'})</p>
+            <p className="text-[10px] uppercase tracking-widest text-emerald-400 px-4 mb-2">قاعدة البيانات ({syncProvider === 'sheets' ? 'Google Sheets' : 'SQL PostgreSQL'})</p>
             
             <button 
               onClick={handleSyncPush}
@@ -198,7 +214,7 @@ const App: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <RefreshCw className={`w-5 h-5 ${isSyncing ? 'animate-spin text-yellow-400' : ''}`} />
-                <span>رفع البيانات</span>
+                <span>مزامنة إلى SQL</span>
               </div>
               <Cloud className={`w-4 h-4 ${(syncProvider === 'sheets' ? sheetUrl : supabaseUrl) ? 'text-emerald-400' : 'text-red-400'}`} />
             </button>
@@ -210,7 +226,7 @@ const App: React.FC = () => {
             >
               <div className="flex items-center gap-3">
                 <DownloadCloud className={`w-5 h-5 ${isPulling ? 'animate-bounce text-yellow-400' : ''}`} />
-                <span>جلب التحديثات</span>
+                <span>جلب من SQL</span>
               </div>
             </button>
 
@@ -219,7 +235,7 @@ const App: React.FC = () => {
               className="w-full flex items-center gap-3 px-4 py-2 rounded-lg hover:bg-emerald-800 transition-all text-xs text-emerald-400"
             >
               <Settings className="w-4 h-4" />
-              <span>إعدادات الربط</span>
+              <span>إعدادات الاتصال</span>
             </button>
           </div>
         </nav>
@@ -249,11 +265,11 @@ const App: React.FC = () => {
           <div className="flex items-center gap-3">
              <div className="hidden lg:flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-100">
                {syncProvider === 'supabase' ? <Database className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-               <span>{syncProvider === 'sheets' ? 'جوجل شيت متصل' : 'SQL Supabase متصل'}</span>
+               <span>{syncProvider === 'sheets' ? 'Google Sheets متصل' : 'SQL Supabase نشط'}</span>
              </div>
             <button 
               onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition-transform"
+              className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition-transform active:scale-95"
             >
               <Plus className="w-5 h-5" />
               <span>إضافة سجل</span>
