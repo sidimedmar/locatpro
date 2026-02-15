@@ -24,16 +24,19 @@ import MonthlyReport from './components/MonthlyReport';
 import SyncSettingsModal from './components/SyncSettingsModal';
 
 const App: React.FC = () => {
+  // Initialize state with safe defaults
   const [properties, setProperties] = useState<Property[]>([]);
   const [view, setView] = useState<'dashboard' | 'properties' | 'reports'>('dashboard');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isSyncModalOpen, setIsSyncModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   
-  // Settings
-  const [syncProvider, setSyncProvider] = useState<'sheets' | 'supabase'>(
-    (localStorage.getItem('sync_provider') as 'sheets' | 'supabase') || 'sheets'
-  );
+  // Settings with validation
+  const [syncProvider, setSyncProvider] = useState<'sheets' | 'supabase'>(() => {
+    const stored = localStorage.getItem('sync_provider');
+    return (stored === 'sheets' || stored === 'supabase') ? stored : 'sheets';
+  });
+  
   const [sheetUrl, setSheetUrl] = useState<string>(localStorage.getItem('google_sheet_url') || '');
   const [supabaseUrl, setSupabaseUrl] = useState<string>(localStorage.getItem('supabase_url') || '');
   const [supabaseKey, setSupabaseKey] = useState<string>(localStorage.getItem('supabase_key') || '');
@@ -42,10 +45,12 @@ const App: React.FC = () => {
   const [isPulling, setIsPulling] = useState(false);
   const [lastSync, setLastSync] = useState<string>(localStorage.getItem('last_sync_time') || '');
 
-  // Initialize Supabase Client
+  // Initialize Supabase Client safely
   const supabase = useMemo(() => {
     if (syncProvider === 'supabase' && supabaseUrl && supabaseKey) {
       try {
+        // Basic validation of URL format to prevent crashes
+        if (!supabaseUrl.startsWith('http')) return null;
         return createClient(supabaseUrl, supabaseKey);
       } catch (e) {
         console.error("Supabase Init Error:", e);
@@ -55,27 +60,47 @@ const App: React.FC = () => {
     return null;
   }, [syncProvider, supabaseUrl, supabaseKey]);
 
+  // Load properties safely
   useEffect(() => {
-    const saved = localStorage.getItem('mauritania_real_estate');
-    if (saved) {
-      setProperties(JSON.parse(saved));
+    try {
+      const saved = localStorage.getItem('mauritania_real_estate');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setProperties(parsed);
+        } else {
+          console.warn("Stored data is invalid, resetting store");
+          setProperties([]);
+        }
+      }
+    } catch (e) {
+      console.error("Failed to parse local storage:", e);
+      setProperties([]);
     }
   }, []);
 
+  // Save properties safely
   useEffect(() => {
-    localStorage.setItem('mauritania_real_estate', JSON.stringify(properties));
+    try {
+      if (Array.isArray(properties)) {
+        localStorage.setItem('mauritania_real_estate', JSON.stringify(properties));
+      }
+    } catch (e) {
+      console.error("Failed to save to local storage:", e);
+    }
   }, [properties]);
 
   const filteredProperties = useMemo(() => {
+    if (!Array.isArray(properties)) return [];
     return properties.filter(p => 
-      p.tenantName.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      p.moughataa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.neighborhood.toLowerCase().includes(searchTerm.toLowerCase())
+      (p.tenantName || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+      (p.moughataa || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (p.neighborhood || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [properties, searchTerm]);
 
   const handleAddProperty = (newProperty: Property) => {
-    setProperties(prev => [newProperty, ...prev]);
+    setProperties(prev => [newProperty, ...(prev || [])]);
     setIsFormOpen(false);
   };
 
@@ -102,8 +127,12 @@ const App: React.FC = () => {
           body: JSON.stringify({ action: 'push', properties })
         });
       } else if (supabase) {
-        // SQL Professional Upsert: Maintient l'intégrité sans supprimer toute la table
-        // On utilise l'ID comme clé de conflit
+        if (!properties.length) {
+          alert("لا توجد بيانات للمزامنة");
+          setIsSyncing(false);
+          return;
+        }
+        // SQL Professional Upsert
         const { error } = await supabase
           .from('properties')
           .upsert(properties, { onConflict: 'id' });
@@ -114,10 +143,10 @@ const App: React.FC = () => {
       const time = new Date().toLocaleString('ar-MA');
       setLastSync(time);
       localStorage.setItem('last_sync_time', time);
-      alert('✅ تم مزامنة البيانات مع SQL بنجاح!');
+      alert(syncProvider === 'supabase' ? '✅ تم الحفظ في قاعدة البيانات SQL' : '✅ تم الإرسال إلى Google Sheets');
     } catch (error: any) {
       console.error("Sync Error:", error);
-      alert(`❌ فشل المزامنة: ${error.message || 'خطأ في الاتصال بقاعدة البيانات'}`);
+      alert(`❌ فشل المزامنة: ${error.message || 'خطأ غير معروف'}`);
     } finally {
       setIsSyncing(false);
     }
@@ -150,6 +179,8 @@ const App: React.FC = () => {
           setLastSync(time);
           localStorage.setItem('last_sync_time', time);
         }
+      } else {
+        alert("لم يتم العثور على بيانات صالحة");
       }
     } catch (error: any) {
       alert(`❌ فشل جلب البيانات: ${error.message}`);
@@ -278,14 +309,14 @@ const App: React.FC = () => {
         </header>
 
         <section className="flex-1 overflow-y-auto p-4 md:p-8">
-          {view === 'dashboard' && <DashboardSummary properties={properties} />}
+          {view === 'dashboard' && <DashboardSummary properties={properties || []} />}
           {view === 'properties' && (
             <div className="space-y-6">
               <h2 className="text-2xl font-bold flex items-center gap-2">إدارة السجلات</h2>
-              <PropertyTable properties={filteredProperties} onDelete={handleDeleteProperty} />
+              <PropertyTable properties={filteredProperties || []} onDelete={handleDeleteProperty} />
             </div>
           )}
-          {view === 'reports' && <MonthlyReport properties={properties} />}
+          {view === 'reports' && <MonthlyReport properties={properties || []} />}
         </section>
       </main>
 

@@ -8,10 +8,13 @@ interface DashboardSummaryProps {
 }
 
 const DashboardSummary: React.FC<DashboardSummaryProps> = ({ properties }) => {
-  const totalRent = properties.reduce((sum, p) => sum + p.monthlyRent, 0);
-  const totalArrears = properties.reduce((sum, p) => sum + p.arrears, 0);
-  const waterIssues = properties.filter(p => !p.sndeStatus).length;
-  const electricityIssues = properties.filter(p => !p.somelecStatus).length;
+  // Safe default
+  const safeProperties = Array.isArray(properties) ? properties : [];
+
+  const totalRent = safeProperties.reduce((sum, p) => sum + (Number(p.monthlyRent) || 0), 0);
+  const totalArrears = safeProperties.reduce((sum, p) => sum + (Number(p.arrears) || 0), 0);
+  const waterIssues = safeProperties.filter(p => !p.sndeStatus).length;
+  const electricityIssues = safeProperties.filter(p => !p.somelecStatus).length;
 
   return (
     <div className="space-y-8">
@@ -25,7 +28,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({ properties }) => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-r-4 border-emerald-500 flex items-center justify-between">
           <div>
             <p className="text-gray-500 text-sm mb-1">إجمالي العقارات</p>
-            <h3 className="text-3xl font-bold text-gray-800">{properties.length}</h3>
+            <h3 className="text-3xl font-bold text-gray-800">{safeProperties.length}</h3>
           </div>
           <div className="p-4 bg-emerald-50 rounded-xl text-emerald-600">
             <Building2 className="w-8 h-8" />
@@ -47,7 +50,7 @@ const DashboardSummary: React.FC<DashboardSummaryProps> = ({ properties }) => {
         <div className="bg-white p-6 rounded-2xl shadow-sm border-r-4 border-blue-500 flex items-center justify-between">
           <div>
             <p className="text-gray-500 text-sm mb-1">المستأجرون</p>
-            <h3 className="text-3xl font-bold text-gray-800">{properties.length}</h3>
+            <h3 className="text-3xl font-bold text-gray-800">{safeProperties.length}</h3>
           </div>
           <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
             <Users className="w-8 h-8" />

@@ -9,7 +9,9 @@ interface PropertyTableProps {
 }
 
 const PropertyTable: React.FC<PropertyTableProps> = ({ properties, onDelete }) => {
-  if (properties.length === 0) {
+  const safeProperties = Array.isArray(properties) ? properties : [];
+
+  if (safeProperties.length === 0) {
     return (
       <div className="bg-white p-12 rounded-2xl shadow-sm text-center border-2 border-dashed border-gray-200">
         <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
@@ -36,7 +38,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ properties, onDelete }) =
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {properties.map((p) => (
+            {safeProperties.map((p) => (
               <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
                 <td className="px-6 py-4">
                   <div className="font-bold text-gray-800">{p.wilaya} - {p.moughataa}</div>
@@ -58,7 +60,7 @@ const PropertyTable: React.FC<PropertyTableProps> = ({ properties, onDelete }) =
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <div className="font-bold text-emerald-700">{p.monthlyRent.toLocaleString()} أوقية</div>
+                  <div className="font-bold text-emerald-700">{Number(p.monthlyRent).toLocaleString()} أوقية</div>
                   <div className="text-xs text-gray-400">{p.paymentSystem}</div>
                 </td>
                 <td className="px-6 py-4">

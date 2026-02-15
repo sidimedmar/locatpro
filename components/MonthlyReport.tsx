@@ -8,14 +8,15 @@ interface MonthlyReportProps {
 }
 
 const MonthlyReport: React.FC<MonthlyReportProps> = ({ properties }) => {
+  const safeProperties = Array.isArray(properties) ? properties : [];
   const now = new Date();
   const monthName = now.toLocaleString('ar-MA', { month: 'long' });
 
   const summary = {
-    totalProperties: properties.length,
-    paidOnTime: properties.filter(p => p.arrears === 0).length,
-    delayed: properties.filter(p => p.arrears > 0).length,
-    utilityCompliant: properties.filter(p => p.sndeStatus && p.somelecStatus).length,
+    totalProperties: safeProperties.length,
+    paidOnTime: safeProperties.filter(p => p.arrears === 0).length,
+    delayed: safeProperties.filter(p => p.arrears > 0).length,
+    utilityCompliant: safeProperties.filter(p => p.sndeStatus && p.somelecStatus).length,
   };
 
   return (
@@ -99,7 +100,7 @@ const MonthlyReport: React.FC<MonthlyReportProps> = ({ properties }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
-            {properties.map(p => (
+            {safeProperties.map(p => (
               <tr key={p.id}>
                 <td className="px-6 py-4">{p.moughataa}</td>
                 <td className="px-6 py-4 font-medium">{p.tenantName}</td>
