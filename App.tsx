@@ -12,8 +12,7 @@ import {
   RefreshCw,
   DownloadCloud,
   CheckCircle2,
-  Database,
-  AlertTriangle
+  Database
 } from 'lucide-react';
 import { createClient } from '@supabase/supabase-js';
 import { Property } from './types';
@@ -105,7 +104,7 @@ const App: React.FC = () => {
   };
 
   const handleDeleteProperty = (id: string) => {
-    if (confirm('هل أنت متأكد من حذف هذا السجل؟')) {
+    if (window.confirm('هل أنت متأكد من حذف هذا السجل؟')) {
       setProperties(prev => prev.filter(p => p.id !== id));
     }
   };
@@ -113,7 +112,7 @@ const App: React.FC = () => {
   const handleSyncPush = async () => {
     const providerUrl = syncProvider === 'sheets' ? sheetUrl : supabaseUrl;
     if (!providerUrl) {
-      alert('يرجى ضبط إعدادات الربط أولاً');
+      window.alert('يرجى ضبط إعدادات الربط أولاً');
       return setIsSyncModalOpen(true);
     }
 
@@ -128,7 +127,7 @@ const App: React.FC = () => {
         });
       } else if (supabase) {
         if (!properties.length) {
-          alert("لا توجد بيانات للمزامنة");
+          window.alert("لا توجد بيانات للمزامنة");
           setIsSyncing(false);
           return;
         }
@@ -143,10 +142,10 @@ const App: React.FC = () => {
       const time = new Date().toLocaleString('ar-MA');
       setLastSync(time);
       localStorage.setItem('last_sync_time', time);
-      alert(syncProvider === 'supabase' ? '✅ تم الحفظ في قاعدة البيانات SQL' : '✅ تم الإرسال إلى Google Sheets');
+      window.alert(syncProvider === 'supabase' ? '✅ تم الحفظ في قاعدة البيانات SQL' : '✅ تم الإرسال إلى Google Sheets');
     } catch (error: any) {
       console.error("Sync Error:", error);
-      alert(`❌ فشل المزامنة: ${error.message || 'خطأ غير معروف'}`);
+      window.alert(`❌ فشل المزامنة: ${error.message || 'خطأ غير معروف'}`);
     } finally {
       setIsSyncing(false);
     }
@@ -173,17 +172,17 @@ const App: React.FC = () => {
       }
       
       if (data && Array.isArray(data)) {
-        if (confirm(`تم جلب ${data.length} سجل من السحاب. هل تريد تحديث القائمة المحلية؟`)) {
+        if (window.confirm(`تم جلب ${data.length} سجل من السحاب. هل تريد تحديث القائمة المحلية؟`)) {
           setProperties(data);
           const time = new Date().toLocaleString('ar-MA');
           setLastSync(time);
           localStorage.setItem('last_sync_time', time);
         }
       } else {
-        alert("لم يتم العثور على بيانات صالحة");
+        window.alert("لم يتم العثور على بيانات صالحة");
       }
     } catch (error: any) {
-      alert(`❌ فشل جلب البيانات: ${error.message}`);
+      window.alert(`❌ فشل جلب البيانات: ${error.message}`);
     } finally {
       setIsPulling(false);
     }

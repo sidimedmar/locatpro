@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { X, Save, AlertCircle } from 'lucide-react';
+import { X, Save } from 'lucide-react';
 import { Property, PropertyType, ContractType, PaymentSystem } from '../types';
 import { MAURITANIA_LOCATIONS } from '../constants';
 
@@ -34,7 +34,8 @@ const PropertyForm: React.FC<PropertyFormProps> = ({ onClose, onSubmit }) => {
     somelecStatus: true,
   });
 
-  const moughataas = wilaya ? MAURITANIA_LOCATIONS[wilaya] : [];
+  // Ensure safe access to locations
+  const moughataas = (wilaya && MAURITANIA_LOCATIONS[wilaya]) ? MAURITANIA_LOCATIONS[wilaya] : [];
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
