@@ -1,17 +1,16 @@
-
 export enum PropertyType {
-  GROUND = 'منزل أرضي',
-  STORY = 'طابق',
+  GROUND = "منزل أرضي",
+  STORY = "طابق",
 }
 
 export enum ContractType {
-  WITH_CONTRACT = 'بعقد',
-  WITHOUT_CONTRACT = 'بدون عقد',
+  WITH_CONTRACT = "بعقد",
+  WITHOUT_CONTRACT = "بدون عقد",
 }
 
 export enum PaymentSystem {
-  PREPAID = 'مقدم',
-  END_OF_MONTH = 'نهاية الشهر',
+  PREPAID = "مقدم",
+  END_OF_MONTH = "نهاية الشهر",
 }
 
 export interface Property {
@@ -34,8 +33,8 @@ export interface Property {
   monthlyRent: number;
   paymentSystem: PaymentSystem;
   arrears: number;
-  sndeStatus: boolean; // Water
-  somelecStatus: boolean; // Electricity
+  sndeStatus: boolean;
+  somelecStatus: boolean;
 }
 
 export interface LocationData {
