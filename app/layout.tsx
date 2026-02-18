@@ -5,9 +5,9 @@ import "./globals.css";
 const cairo = Cairo({ subsets: ["arabic", "latin"] });
 
 export const metadata: Metadata = {
-  title: "LocatPro - نظام إدارة العقارات الموريتاني",
+  title: "LocatPro Pro - نظام إدارة العقارات المتقدم",
   description:
-    "نظام متكامل لإدارة العقارات والمستأجرين في موريتانيا مع قاعدة بيانات سحابية",
+    "نظام متكامل لإدارة العقارات والمستأجرين والمدفوعات والصيانة في موريتانيا مع قاعدة بيانات سحابية",
 };
 
 export const viewport: Viewport = {

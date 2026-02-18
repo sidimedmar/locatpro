@@ -8,6 +8,14 @@ export async function DELETE(
   try {
     const { id } = await params;
     const sql = getDb();
+
+    await sql`
+      INSERT INTO activity_log (id, property_id, action_type, description)
+      VALUES (${crypto.randomUUID()}, ${id}, 'delete', ${"تم حذف عقار"})
+    `;
+
+    await sql`DELETE FROM payments WHERE property_id = ${id}`;
+    await sql`DELETE FROM maintenance_requests WHERE property_id = ${id}`;
     await sql`DELETE FROM properties WHERE id = ${id}`;
     return NextResponse.json({ success: true });
   } catch (error: unknown) {
