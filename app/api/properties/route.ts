@@ -26,7 +26,9 @@ export async function GET() {
         payment_system AS "paymentSystem",
         arrears,
         snde_status AS "sndeStatus",
-        somelec_status AS "somelecStatus"
+        somelec_status AS "somelecStatus",
+        notes,
+        status
       FROM properties
       ORDER BY created_at DESC
     `;
@@ -65,6 +67,8 @@ export async function POST(request: NextRequest) {
       arrears,
       sndeStatus,
       somelecStatus,
+      notes,
+      status,
     } = body;
 
     await sql`
@@ -73,14 +77,20 @@ export async function POST(request: NextRequest) {
         rooms_count, type, accessories, owner_name, owner_phone,
         owner_id, tenant_name, tenant_phone, tenant_id,
         contract_date, contract_type, monthly_rent, payment_system,
-        arrears, snde_status, somelec_status
+        arrears, snde_status, somelec_status, notes, status
       ) VALUES (
         ${id}, ${wilaya}, ${moughataa}, ${neighborhood}, ${houseNumber},
         ${roomsCount}, ${type}, ${accessories || ""}, ${ownerName}, ${ownerPhone},
         ${ownerId}, ${tenantName}, ${tenantPhone}, ${tenantId},
         ${contractDate}, ${contractType}, ${monthlyRent}, ${paymentSystem},
-        ${arrears || 0}, ${sndeStatus ?? true}, ${somelecStatus ?? true}
+        ${arrears || 0}, ${sndeStatus ?? true}, ${somelecStatus ?? true},
+        ${notes || ""}, ${status || "active"}
       )
+    `;
+
+    await sql`
+      INSERT INTO activity_log (id, property_id, action_type, description)
+      VALUES (${crypto.randomUUID()}, ${id}, 'create', ${"تم إضافة عقار جديد في " + moughataa + " للمستأجر " + tenantName})
     `;
 
     return NextResponse.json({ success: true }, { status: 201 });

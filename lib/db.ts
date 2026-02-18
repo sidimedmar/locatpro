@@ -1,8 +1,11 @@
 import { neon } from "@neondatabase/serverless";
 
 export function getDb() {
-  if (!process.env.DATABASE_URL) {
-    throw new Error("DATABASE_URL environment variable is not set");
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error(
+      "DATABASE_URL environment variable is not set. Please add the Neon integration from the sidebar."
+    );
   }
-  return neon(process.env.DATABASE_URL);
+  return neon(url);
 }

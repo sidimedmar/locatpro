@@ -35,6 +35,44 @@ export interface Property {
   arrears: number;
   sndeStatus: boolean;
   somelecStatus: boolean;
+  notes?: string;
+  status?: string;
+}
+
+export interface Payment {
+  id: string;
+  propertyId: string;
+  amount: number;
+  paymentDate: string;
+  monthCovered: string;
+  method: string;
+  notes: string;
+  createdAt?: string;
+  tenantName?: string;
+  moughataa?: string;
+}
+
+export interface MaintenanceRequest {
+  id: string;
+  propertyId: string;
+  title: string;
+  description: string;
+  priority: "low" | "medium" | "high" | "urgent";
+  status: "pending" | "in_progress" | "completed" | "cancelled";
+  estimatedCost: number;
+  actualCost: number;
+  createdAt?: string;
+  resolvedAt?: string | null;
+  tenantName?: string;
+  moughataa?: string;
+}
+
+export interface ActivityLog {
+  id: string;
+  propertyId: string | null;
+  actionType: string;
+  description: string;
+  createdAt?: string;
 }
 
 export interface LocationData {
