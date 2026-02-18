@@ -20,6 +20,15 @@ export function useProperties() {
     mutate();
   };
 
+  const updateProperty = async (id: string, property: Property) => {
+    await fetch(`/api/properties/${id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(property),
+    });
+    mutate();
+  };
+
   const deleteProperty = async (id: string) => {
     await fetch(`/api/properties/${id}`, { method: "DELETE" });
     mutate();
@@ -30,6 +39,7 @@ export function useProperties() {
     isLoading,
     isError: !!error,
     addProperty,
+    updateProperty,
     deleteProperty,
     mutate,
   };
