@@ -9,12 +9,13 @@ import {
   Wallet,
   Wrench,
   Activity,
+  Map,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { useState } from "react";
 
-export type View = "dashboard" | "properties" | "payments" | "maintenance" | "reports" | "activity";
+export type View = "dashboard" | "properties" | "map" | "payments" | "maintenance" | "reports" | "activity";
 
 interface SidebarProps {
   view: View;
@@ -28,6 +29,7 @@ interface SidebarProps {
 const NAV_ITEMS: { key: View; label: string; icon: typeof LayoutDashboard }[] = [
   { key: "dashboard", label: "لوحة التحكم", icon: LayoutDashboard },
   { key: "properties", label: "إدارة العقارات", icon: Users },
+  { key: "map", label: "الخريطة", icon: Map },
   { key: "payments", label: "المدفوعات", icon: Wallet },
   { key: "maintenance", label: "الصيانة", icon: Wrench },
   { key: "reports", label: "التقارير", icon: FileText },

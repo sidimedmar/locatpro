@@ -14,6 +14,7 @@ import DashboardSummary from "@/components/dashboard-summary";
 import PaymentManager from "@/components/payment-manager";
 import MaintenanceManager from "@/components/maintenance-manager";
 import MonthlyReport from "@/components/monthly-report";
+import PropertyMap from "@/components/property-map";
 import ActivityLogView from "@/components/activity-log";
 
 export default function HomePage() {
@@ -126,6 +127,13 @@ export default function HomePage() {
               />
             )}
           </div>
+        );
+      case "map":
+        return (
+          <PropertyMap
+            properties={properties}
+            onViewProperty={handleView}
+          />
         );
       case "payments":
         return <PaymentManager properties={properties} />;
