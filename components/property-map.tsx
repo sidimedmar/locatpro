@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Property } from "@/lib/types";
 import {
-  WILAYA_COORDINATES,
-  getPropertyCoordinates,
   getWilayaColor,
 } from "@/lib/geo-coordinates";
 import {
@@ -20,13 +18,13 @@ import {
   Filter,
   Layers,
 } from "lucide-react";
+import MapLeaflet from "./map-leaflet";
 
 interface PropertyMapProps {
   properties: Property[];
   onViewProperty?: (property: Property) => void;
 }
 
-// Group properties by wilaya and moughataa
 function groupProperties(properties: Property[]) {
   const grouped: Record<
     string,
@@ -46,20 +44,9 @@ export default function PropertyMap({
   properties,
   onViewProperty,
 }: PropertyMapProps) {
-  const [MapComponent, setMapComponent] = useState<React.ComponentType<{
-    properties: Property[];
-    onViewProperty?: (property: Property) => void;
-  }> | null>(null);
   const [selectedWilaya, setSelectedWilaya] = useState<string>("all");
   const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
   const [showList, setShowList] = useState(true);
-
-  // Dynamically import Leaflet (it needs window)
-  useEffect(() => {
-    import("./map-leaflet").then((mod) => {
-      setMapComponent(() => mod.default);
-    });
-  }, []);
 
   const grouped = useMemo(() => groupProperties(properties), [properties]);
 
@@ -108,7 +95,6 @@ export default function PropertyMap({
           </p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Wilaya filter */}
           <div className="relative">
             <Filter className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
             <select
@@ -139,7 +125,7 @@ export default function PropertyMap({
         </div>
       </div>
 
-      {/* Stats Bar */}
+      {/* Stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-card p-4 rounded-xl border border-border">
           <p className="text-xs text-muted-foreground">{"إجمالي العقارات"}</p>
@@ -159,7 +145,11 @@ export default function PropertyMap({
         </div>
         <div className="bg-card p-4 rounded-xl border border-border">
           <p className="text-xs text-muted-foreground">{"المتأخرات"}</p>
-          <p className={`text-2xl font-bold ${totalArrears > 0 ? "text-destructive" : "text-primary"}`}>
+          <p
+            className={`text-2xl font-bold ${
+              totalArrears > 0 ? "text-destructive" : "text-primary"
+            }`}
+          >
             {totalArrears.toLocaleString()}
           </p>
         </div>
@@ -168,16 +158,10 @@ export default function PropertyMap({
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Map */}
         <div className="flex-1 bg-card rounded-2xl border border-border overflow-hidden shadow-sm min-h-[500px]">
-          {MapComponent ? (
-            <MapComponent
-              properties={filteredProperties}
-              onViewProperty={(p) => setSelectedProperty(p)}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-[500px] text-muted-foreground">
-              {"جاري تحميل الخريطة..."}
-            </div>
-          )}
+          <MapLeaflet
+            properties={filteredProperties}
+            onViewProperty={(p) => setSelectedProperty(p)}
+          />
         </div>
 
         {/* Side Panel */}
@@ -207,7 +191,9 @@ export default function PropertyMap({
                     >
                       <MapPin className="w-4 h-4 shrink-0" style={{ color }} />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold truncate">{group.moughataa}</p>
+                        <p className="text-sm font-bold truncate">
+                          {group.moughataa}
+                        </p>
                         <p className="text-xs text-muted-foreground truncate">
                           {group.wilaya} - {group.properties.length} {"عقار"}
                         </p>
@@ -222,7 +208,9 @@ export default function PropertyMap({
                         >
                           <div className="flex items-center gap-2">
                             <Home className="w-3.5 h-3.5 text-primary shrink-0" />
-                            <span className="text-xs font-semibold truncate">{p.tenantName}</span>
+                            <span className="text-xs font-semibold truncate">
+                              {p.tenantName}
+                            </span>
                             <span className="text-[10px] text-muted-foreground mr-auto whitespace-nowrap">
                               {Number(p.monthlyRent).toLocaleString()} {"أوقية"}
                             </span>
@@ -254,7 +242,9 @@ export default function PropertyMap({
           <div className="bg-card text-card-foreground w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
             <div
               className="p-5 flex items-center justify-between"
-              style={{ borderBottom: `3px solid ${getWilayaColor(selectedProperty.wilaya)}` }}
+              style={{
+                borderBottom: `3px solid ${getWilayaColor(selectedProperty.wilaya)}`,
+              }}
             >
               <div>
                 <h3 className="text-lg font-bold flex items-center gap-2">
@@ -262,7 +252,8 @@ export default function PropertyMap({
                   {selectedProperty.moughataa} - {selectedProperty.wilaya}
                 </h3>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {selectedProperty.neighborhood} {"- منزل رقم"} {selectedProperty.houseNumber}
+                  {selectedProperty.neighborhood} {"- منزل رقم"}{" "}
+                  {selectedProperty.houseNumber}
                 </p>
               </div>
               <button
@@ -290,19 +281,24 @@ export default function PropertyMap({
                     {"الإيجار الشهري"}
                   </div>
                   <p className="text-sm font-bold text-primary">
-                    {Number(selectedProperty.monthlyRent).toLocaleString()} {"أوقية"}
+                    {Number(selectedProperty.monthlyRent).toLocaleString()}{" "}
+                    {"أوقية"}
                   </p>
                 </div>
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-accent/30 p-3 rounded-lg">
                   <p className="text-xs text-muted-foreground flex items-center gap-1 mb-1">
                     <User className="w-3.5 h-3.5" />
                     {"المالك"}
                   </p>
-                  <p className="text-sm font-semibold">{selectedProperty.ownerName}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1" dir="ltr">
+                  <p className="text-sm font-semibold">
+                    {selectedProperty.ownerName}
+                  </p>
+                  <p
+                    className="text-xs text-muted-foreground flex items-center gap-1 mt-1"
+                    dir="ltr"
+                  >
                     <Phone className="w-3 h-3" />
                     {selectedProperty.ownerPhone}
                   </p>
@@ -312,38 +308,68 @@ export default function PropertyMap({
                     <User className="w-3.5 h-3.5" />
                     {"المستأجر"}
                   </p>
-                  <p className="text-sm font-semibold">{selectedProperty.tenantName}</p>
-                  <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1" dir="ltr">
+                  <p className="text-sm font-semibold">
+                    {selectedProperty.tenantName}
+                  </p>
+                  <p
+                    className="text-xs text-muted-foreground flex items-center gap-1 mt-1"
+                    dir="ltr"
+                  >
                     <Phone className="w-3 h-3" />
                     {selectedProperty.tenantPhone}
                   </p>
                 </div>
               </div>
-
               <div className="flex items-center gap-4 bg-muted p-3 rounded-lg">
                 <div className="flex items-center gap-2">
-                  <Droplet className={`w-4 h-4 ${selectedProperty.sndeStatus ? "text-blue-600" : "text-destructive"}`} />
-                  <span className={`text-xs font-bold ${selectedProperty.sndeStatus ? "text-blue-600" : "text-destructive"}`}>
-                    {"SNDE: "}{selectedProperty.sndeStatus ? "منتظمة" : "بها خلل"}
+                  <Droplet
+                    className={`w-4 h-4 ${
+                      selectedProperty.sndeStatus
+                        ? "text-blue-600"
+                        : "text-destructive"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs font-bold ${
+                      selectedProperty.sndeStatus
+                        ? "text-blue-600"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {"SNDE: "}
+                    {selectedProperty.sndeStatus ? "منتظمة" : "بها خلل"}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Zap className={`w-4 h-4 ${selectedProperty.somelecStatus ? "text-orange-500" : "text-destructive"}`} />
-                  <span className={`text-xs font-bold ${selectedProperty.somelecStatus ? "text-orange-500" : "text-destructive"}`}>
-                    {"SOMELEC: "}{selectedProperty.somelecStatus ? "منتظمة" : "بها خلل"}
+                  <Zap
+                    className={`w-4 h-4 ${
+                      selectedProperty.somelecStatus
+                        ? "text-orange-500"
+                        : "text-destructive"
+                    }`}
+                  />
+                  <span
+                    className={`text-xs font-bold ${
+                      selectedProperty.somelecStatus
+                        ? "text-orange-500"
+                        : "text-destructive"
+                    }`}
+                  >
+                    {"SOMELEC: "}
+                    {selectedProperty.somelecStatus ? "منتظمة" : "بها خلل"}
                   </span>
                 </div>
               </div>
-
               {Number(selectedProperty.arrears) > 0 && (
                 <div className="bg-destructive/10 p-3 rounded-lg flex items-center gap-2">
                   <Wallet className="w-4 h-4 text-destructive" />
                   <span className="text-sm font-bold text-destructive">
-                    {"متأخرات: "}{Number(selectedProperty.arrears).toLocaleString()} {"أوقية"}
+                    {"متأخرات: "}
+                    {Number(selectedProperty.arrears).toLocaleString()}{" "}
+                    {"أوقية"}
                   </span>
                 </div>
               )}
-
               <div className="flex gap-2 pt-2">
                 {onViewProperty && (
                   <button
